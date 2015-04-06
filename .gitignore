@@ -1,0 +1,8 @@
+*.suo
+.vs/
+UnitTestTransNET/bin/
+TransNET/bin/
+TransNET/obj/
+packages/
+UnitTestTransNET/obj/
+*.user
