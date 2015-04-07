@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -13,61 +15,106 @@ namespace TransNET
 {
     public class Writer
     {
-        public string Write(object obj)
+        public string Write(dynamic obj)
         {
             var o = WriteTopLevel(obj);
             var json = JsonConvert.SerializeObject(o);
             return json;
         }
 
-        private object WriteTopLevel(object o)
+        private object WriteTopLevel(dynamic o)
         {
-            if (!(o is string) && o is IEnumerable) return WriteToken(o);
+            if (!(o is string) && o is IEnumerable) return Write(o);
             else return WriteSingleWrapper(o);
         }
 
-        private object WriteToken(object o)
+        private object WriteSingleWrapper(dynamic o)
         {
-            if (o == null || o is bool || o is string || o is int) return o;
-            else if (o is Array) return WriteArray((Array)o);
-            else if (o is Keyword) return WriteKeyword((Keyword)o);
-            else if (o is Symbol) return WriteSymbol((Symbol)o);
-            else if (o is DateTime) return WriteDateTime((DateTime)o);
-            Debugger.Break();
-            throw new Exception();
+            var token = Write(o);
+            return new[] { "~#'", token };
         }
 
-        private IEnumerable WriteArray(Array array)
+        private int Write(int i)
         {
-            var l = new List<object>();
-            foreach (var i in array)
-            {
-                var t = WriteToken(i);
-                l.Add(t); 
-            }
+            return i;
+        }
+
+        private long Write(long l)
+        {
             return l;
         }
 
-        private string WriteDateTime(DateTime dt)
+        private object Write(BigInteger bi)
+        {
+            var s = bi.ToString();
+
+            var bigN = bi;
+            var bitLength = 0;
+            do
+            {
+                bitLength++;
+                bigN /= 2;
+            } while (bigN != BigInteger.Zero);
+
+            if (bitLength < 32) return (int)bi;
+            else if (bitLength < 53) return (long)bi;
+            else if (bitLength <= 64) return $"~i{s}";
+            else return $"~n{s}";
+        }
+
+        private object Write(double d)
+        {
+            if (double.IsPositiveInfinity(d)) return "~zINF";
+            else if (double.IsNegativeInfinity(d)) return "~z-INF";
+            else if (double.IsNaN(d)) return "~zNaN";
+            return d;
+        }
+
+        
+
+        private bool Write(bool b)
+        {
+            return b;
+        }
+
+        private string Write(string s)
+        {
+            return s;
+        }
+
+        private string Write(Keyword k)
+        {
+            return $"~:{k.name}";
+        }
+
+        private string Write(Symbol s) {
+            return $"~${s.name}";
+        }
+
+        private string Write(DateTime dt)
         {
             var offset = dt.ToUniversalTime().Subtract(Globals.UnixEpoch).TotalMilliseconds;
             return $"~m{offset}";
         }
 
-        private string WriteSymbol(Symbol symbol)
+        private string Write(Uri uri)
         {
-            return $"~${symbol.name}";
+            return $"~r{uri.OriginalString}";
         }
 
-        private string WriteKeyword(Keyword keyword)
+        private string Write(Guid guid)
         {
-            return $"~:{keyword.name}";
+            return $"~u{guid}";
         }
 
-        private object[] WriteSingleWrapper(object o)
-        {
-            var token = WriteToken(o);
-            return new[] { "~#'", token};
+        private IEnumerable Write(IEnumerable enumerable) {
+            var l = new List<object>();
+            foreach (dynamic i in enumerable)
+            {
+                var t = Write(i);
+                l.Add(t);
+            }
+            return l;
         }
     }
 }
