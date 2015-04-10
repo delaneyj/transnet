@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace TransNET
@@ -11,9 +12,10 @@ namespace TransNET
     {
         private HashSet<string> cacheSet = new HashSet<string>();
         private Dictionary<int, string> cache = new Dictionary<int, string>();
+        private Dictionary<string, int> reverseCache = new Dictionary<string, int>();
         private int nextCacheIndex = 0;
-        private const int CACHE_CODE_DIGITS = 44;
-        private const int BASE_CHAR_INDEX = 48;
+        private const byte CACHE_CODE_DIGITS = 44;
+        private const byte BASE_CHAR_INDEX = 48;
         private const char SUB_STR = '^';
         private const int MAX_ENTRIES = CACHE_CODE_DIGITS * CACHE_CODE_DIGITS;
 
@@ -21,7 +23,8 @@ namespace TransNET
         {
             nextCacheIndex = 0;
             cache.Clear();
-            cacheSet.Clear();
+            reverseCache.Clear();
+            cacheSet.Clear();            
         }
 
         internal string Upsert(string keyCache)
@@ -48,10 +51,41 @@ namespace TransNET
             return key;
         }
 
+        readonly string[] mustNotEscape = "#_s?idb:$fnmturc'zX".Select(c => $"~{c}").ToList().ToArray();
+        readonly string[] mustEscape = new [] { "~","^","`"};
+
+        internal string Shorten(string s)
+        {
+            if (!mustNotEscape.Any(c => s.StartsWith(c)))
+            {
+                if (mustEscape.Any(c => s.StartsWith(c)))
+                {
+                    s = $"~{s}";
+                }
+            }
+
+            if (s.Length <= 3) return s;
+
+            if (!cacheSet.Contains(s))
+            {
+                if (nextCacheIndex >= MAX_ENTRIES) Clear();
+                cacheSet.Add(s);
+                reverseCache.Add(s, nextCacheIndex++);
+                return s;
+            }
+            else
+            {
+                var index = reverseCache[s];
+                var code = IndexToCode(index);
+                return code;
+            }
+        }
+
         private string IndexToCode(int index)
         {
             var hi = index / CACHE_CODE_DIGITS;
             var lo = index % CACHE_CODE_DIGITS;
+            
             if (hi == 0)
             {
                 return $"{SUB_STR}{Convert.ToChar(lo + BASE_CHAR_INDEX)}";

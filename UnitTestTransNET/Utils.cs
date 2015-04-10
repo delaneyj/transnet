@@ -21,7 +21,7 @@ namespace UnitTestTransNET
         internal static void RunWrite(string jsonName, object actual)
         {
             var writer = new Writer();
-            var actualJson = writer.Write(actual);
+            var actualJson = writer.WriteToJSON(actual);
             var expectedJson = LoadExample(jsonName);
             Assert.AreEqual(expectedJson, actualJson);
         }
