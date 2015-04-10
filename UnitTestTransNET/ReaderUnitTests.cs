@@ -722,8 +722,8 @@ namespace UnitTestTransNET
             Utils.RunRead("maps_two_char_sym_keys", r =>
             {
                 Assert.IsInstanceOfType(r, typeof(object[]));
-                var aa = new Keyword("aa");
-                var bb = new Keyword("bb");
+                var aa = new Symbol("aa");
+                var bb = new Symbol("bb");
                 Assert.AreEqual(r[0][aa], 1);
                 Assert.AreEqual(r[0][bb], 2);
                 Assert.AreEqual(r[1][aa], 3);
@@ -739,8 +739,8 @@ namespace UnitTestTransNET
             Utils.RunRead("maps_three_char_sym_keys", r =>
             {
                 Assert.IsInstanceOfType(r, typeof(object[]));
-                var aaa = new Keyword("aaa");
-                var bbb = new Keyword("bbb");
+                var aaa = new Symbol("aaa");
+                var bbb = new Symbol("bbb");
                 Assert.AreEqual(r[0][bbb], 2);
                 Assert.AreEqual(r[0][aaa], 1);
                 Assert.AreEqual(r[1][bbb], 4);
@@ -756,8 +756,8 @@ namespace UnitTestTransNET
             Utils.RunRead("maps_four_char_sym_keys", r =>
             {
                 Assert.IsInstanceOfType(r, typeof(object[]));
-                var aaaa = new Keyword("aaaa");
-                var bbbb = new Keyword("bbbb");
+                var aaaa = new Symbol("aaaa");
+                var bbbb = new Symbol("bbbb");
                 Assert.AreEqual(r[0][bbbb], 2);
                 Assert.AreEqual(r[0][aaaa], 1);
                 Assert.AreEqual(r[1][bbbb], 4);
