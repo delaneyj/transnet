@@ -14,6 +14,25 @@ namespace UnitTestTransNET
     public class WriterUnitTests
     {
         [TestMethod]
+        public void Writer_Anonymous_Type()
+        {
+            var writer = new Writer();
+            var json = writer.WriteJSON(new
+            {
+                Foo = "foo",
+                Bar = 11,
+                Baz = new[] {1,3,4,5},
+                Monkey = new
+                {
+                    Foo = 12323,
+                    Bar = 1232134
+                }
+            });
+            
+            Assert.AreEqual(json, "[\"^ \",\"Foo\",\"foo\",\"Bar\",11,\"Baz\",[1,3,4,5],\"Monkey\",[\"^ \",\"Foo\",12323,\"Bar\",1232134]]");
+        }
+
+        [TestMethod]
         public void Writer_Null()
         {
             Utils.RunWrite("nil", null);
@@ -207,9 +226,9 @@ namespace UnitTestTransNET
 
             var actual = new[] { -3.14159, 3.14159, 4.0E11, 2.998E8, 6.626E-34 };
             
-            var actualJson = writer.WriteToJSON(actual);
+            var actualJson = writer.WriteJSON(actual);
             var expectedJson = Utils.LoadExample("doubles_interesting");
-            var expected = reader.Read(expectedJson);
+            var expected = reader.ReadJSON(expectedJson);
 
             for(var i = 0; i < actual.Length; i++)
             {

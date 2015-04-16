@@ -8,6 +8,7 @@ using System.Text;
 using System.Diagnostics.Contracts;
 using System.Dynamic;
 using System.Numerics;
+using System.Reflection;
 
 namespace TransNET
 {
@@ -17,14 +18,24 @@ namespace TransNET
 
         public Reader()
         {
+            //JsonConvert.DeserializeObject<TestParse>()
         }
 
-        public dynamic Read(string json)
+        public dynamic ReadJSON(string json)
         {
             cache.Clear();
             var o = (JToken)JsonConvert.DeserializeObject(json);
             var transitParsed = ParseToken(o);
             return transitParsed;
+        }
+
+        public T Parse<T>(string transitJson) where T : new()
+        {
+            //TODO This is a dirty hack until I get a chance to really dig into how JSON.NET is automagically parse to a class.
+            var parsed = ReadJSON(transitJson);
+            var actualJson = JsonConvert.SerializeObject(parsed);
+            var o = JsonConvert.DeserializeObject<T>(actualJson);
+            return o;
         }
 
         private dynamic ParseToken(JToken jtoken)

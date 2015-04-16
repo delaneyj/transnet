@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -15,9 +16,10 @@ namespace TransNET
 {
     public class Writer
     {
-        Cache cache = new Cache();
+        private Cache cache = new Cache();
+        private static readonly long MAX_53_BIT = (long)Math.Pow(2, 53);
 
-        public string WriteToJSON(dynamic obj, bool verbose = false)
+        public string WriteJSON(dynamic obj, bool verbose = false)
         {
             cache.Clear();
             var o = WriteTopLevel(obj, verbose);
@@ -27,7 +29,7 @@ namespace TransNET
 
         private object WriteTopLevel(dynamic o, bool verbose)
         {
-            if (!(o is string) && o is IEnumerable) return WriteToken(o, verbose, false);
+            if((!(o is string) && o is IEnumerable) || Utils.IsAnonymousType(o)) return WriteToken(o, verbose, false);
             else return WriteSingleWrapper(o, verbose);
         }
 
@@ -40,7 +42,8 @@ namespace TransNET
         private object WriteToken(dynamic o, bool verbose, bool isMapKey)
         {
             if ((object)o == null) return isMapKey ? "~_" : null;
-            else if (o is bool) return isMapKey ? "~?" + (((bool)o) ? 't' : 'f') : o;
+
+            if (o is bool) return isMapKey ? "~?" + (((bool)o) ? 't' : 'f') : o;
             else if (o is byte[]) return $"~b{Convert.ToBase64String(o)}";
             else if (o is Uri) return cache.Shorten($"~r{((Uri)o).OriginalString}");
             else if (o is Guid) return cache.Shorten($"~u{((Guid)o)}");
@@ -54,6 +57,17 @@ namespace TransNET
             else if (o is float || o is double)
             {
                 return WriteFloatingPoint(o, verbose, isMapKey);
+            }
+            else if(Utils.IsAnonymousType(o))
+            {
+                var map = new Dictionary<string, object>();
+                foreach(var propertyInfo in o.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                {
+                    var name = propertyInfo.Name;
+                    var value = propertyInfo.GetValue(o, null);
+                    map.Add(name,value);
+                }
+                return WriteToken(map, verbose, false);
             }
             else
             {
@@ -155,10 +169,10 @@ namespace TransNET
             if (!isMapKey)
             {
                 if (abs <= int.MaxValue && abs >= int.MinValue) return (int)bi;
-                else if (abs < 9007199254740992) return (long)bi; // (53^2)-1
+                else if (abs < MAX_53_BIT) return (long)bi;
             }
 
-            if (abs <= long.MaxValue && abs >= long.MinValue) return $"~i{bi}";
+            if (bi <= long.MaxValue && bi >= long.MinValue) return $"~i{bi}";
             else return $"~n{bi}";
         }
     }

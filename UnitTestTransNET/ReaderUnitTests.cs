@@ -8,9 +8,51 @@ using TransNET.Types;
 
 namespace UnitTestTransNET
 {
+    public class Monkey
+    {
+        public int Foo { get; set; }
+        public int Bar { get; set; }
+    }
+
+    public class TestParse
+    {
+        public string Foo { get; set; }
+        public int Bar { get; set; }
+        public int[] Baz { get; set; }
+
+        public Monkey Monkey { get; set; }
+    }
+
     [TestClass]
     public class ReaderUnitTests
     {
+        [TestMethod]
+        public void Reader_Parse()
+        {
+            var json = "[\"^ \",\"Foo\",\"foo\",\"Bar\",11,\"Baz\",[1,3,4,5],\"Monkey\",[\"^ \",\"Foo\",12323,\"Bar\",1232134]]";
+            var reader = new TransNET.Reader();
+            var actual = reader.Parse<TestParse>(json);
+            var expected = new TestParse()
+            {
+                Foo = "foo",
+                Bar = 11,
+                Baz = new[] { 1, 3, 4, 5 },
+                Monkey = new Monkey()
+                {
+                    Foo = 12323,
+                    Bar = 1232134
+                }
+            };
+            Assert.AreEqual(actual.Foo, expected.Foo);
+            Assert.AreEqual(actual.Bar, expected.Bar);
+            Assert.AreEqual(actual.Baz[0], expected.Baz[0]);
+            Assert.AreEqual(actual.Baz[1], expected.Baz[1]);
+            Assert.AreEqual(actual.Baz[2], expected.Baz[2]);
+            Assert.AreEqual(actual.Baz[3], expected.Baz[3]);
+            Assert.AreEqual(actual.Monkey.Foo, expected.Monkey.Foo);
+            Assert.AreEqual(actual.Monkey.Bar, expected.Monkey.Bar);
+        }
+
         [TestMethod]
         public void Reader_Null()
         {
